@@ -242,22 +242,36 @@ In many cases, you will not need to download every product that is associated wi
 `~astroquery.mast.MastMissionsClass.filter_products` function allows for filtering based on file extension (``extension``)
 and any other of the product fields.
 
-The **AND** operation is performed for a list of filters, and the **OR** operation is performed within a filter set. 
-For example, the filter below will return FITS products that are "science" type **and** have a ``file_suffix`` of "ASN" (association
-files) **or** "JIF" (job information files).
+The **AND** operation is applied between filters, and the **OR** operation is applied within each filter set, except in the case of negated values.
+
+A filter value can be negated by prefiing it with ``!``, meaning that rows matching that value will be excluded from the results.
+When any negated value is present in a filter set, any positive values in that set are combined with **OR** logic, and the negated 
+values are combined with **AND** logic against the positives. 
+
+For example:
+  - ``file_suffix=['A', 'B', '!C']`` → (file_suffix != C) AND (file_suffix == A OR file_suffix == B)
+  - ``size=['!14400', '<20000']`` → (size != 14400) AND (size < 20000)
+
+For columns with numeric data types (``int`` or ``float``), filter values can be expressed in several ways:
+  - A single number: ``size=100``
+  - A range in the form "start..end": ``size="100..1000"``
+  - A comparison operator followed by a number: ``size=">=1000"``
+  - A list of expressions (OR logic): ``size=[100, "500..1000", ">=1500"]``
+
+The filter below returns FITS products that are "science" type **and** less than or equal to 20,000 bytes in size
+**and** have a ``file_suffix`` of "ASN" (association files) **or** "JIF" (job information files).
 
 .. doctest-remote-data::
    >>> filtered = missions.filter_products(products,
    ...                                     extension='fits',
    ...                                     type='science',
+   ...                                     size='<=20000',        
    ...                                     file_suffix=['ASN', 'JIF'])
    >>> print(filtered)  # doctest: +IGNORE_OUTPUT
          product_key          access  dataset  ...    category     size   type 
    ---------------------------- ------ --------- ... -------------- ----- -------
    JBTAA0010_jbtaa0010_asn.fits PUBLIC JBTAA0010 ...            AUX 11520 science
-   JBTAA0010_jbtaa0010_jif.fits PUBLIC JBTAA0010 ... JITTER/SUPPORT 60480 science
    JBTAA0020_jbtaa0020_asn.fits PUBLIC JBTAA0020 ...            AUX 11520 science
-   JBTAA0020_jbtaa0020_jif.fits PUBLIC JBTAA0020 ... JITTER/SUPPORT 60480 science
 
 Downloading Data Products
 -------------------------

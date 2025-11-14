@@ -22,8 +22,9 @@ import astropy.coordinates as coord
 from astropy.table import Table, Row, vstack
 from astroquery import log
 from astroquery.mast.cloud import CloudAccess
+from astroquery.utils import commons
 
-from ..utils import commons, async_to_sync
+from ..utils import async_to_sync
 from ..utils.class_or_instance import class_or_instance
 from ..exceptions import (InvalidQueryError, RemoteServiceError,
                           NoResultsWarning, InputWarning)
@@ -234,7 +235,7 @@ class ObservationsClass(MastQueryWithLogin):
         """
 
         # Put coordinates and radius into consistent format
-        coordinates = commons.parse_coordinates(coordinates)
+        coordinates = commons.parse_coordinates(coordinates, return_frame='icrs')
 
         # if radius is just a number we assume degrees
         radius = coord.Angle(radius, u.deg)
@@ -363,7 +364,7 @@ class ObservationsClass(MastQueryWithLogin):
         """
 
         # build the coordinates string needed by ObservationsClass._caom_filtered_position
-        coordinates = commons.parse_coordinates(coordinates)
+        coordinates = commons.parse_coordinates(coordinates, return_frame='icrs')
 
         # if radius is just a number we assume degrees
         radius = coord.Angle(radius, u.deg)
@@ -545,7 +546,7 @@ class ObservationsClass(MastQueryWithLogin):
 
     def filter_products(self, products, *, mrp_only=False, extension=None, **filters):
         """
-        Takes an `~astropy.table.Table` of MAST observation data products and filters it based on given filters.
+        Filters an `~astropy.table.Table` of data products based on given filters.
 
         Parameters
         ----------
@@ -556,47 +557,51 @@ class ObservationsClass(MastQueryWithLogin):
         extension : string or array, optional
             Default None. Option to filter by file extension.
         **filters :
-            Filters to be applied.  Valid filters are all products fields listed
+            Column-based filters to apply to the products table. Valid filters are all products fields listed
             `here <https://masttest.stsci.edu/api/v0/_productsfields.html>`__.
-            The column name is the keyword, with the argument being one or more acceptable values
-            for that parameter.
-            Filter behavior is AND between the filters and OR within a filter set.
-            For example: productType="SCIENCE",extension=["fits","jpg"]
+
+            Each keyword corresponds to a column name in the table, with the argument being one or more
+            acceptable values for that column. AND logic is applied between filters.
+
+            Within each column's filter set:
+
+            - Positive (non-negated) values are combined with OR logic.
+            - Any negated values (prefixed with "!") are combined with AND logic against the ORed positives.
+              This results in: (NOT any_negatives) AND (any_positives)
+              Examples:
+              ``productType=['A', 'B', '!C']`` → (productType != C) AND (productType == A OR productType == B)
+              ``size=['!14400', '<20000']`` → (size != 14400) AND (size < 20000)
+
+            For columns with numeric data types (int or float), filter values can be expressed
+            in several ways:
+
+            - A single number: ``size=100``
+            - A range in the form "start..end": ``size="100..1000"``
+            - A comparison operator followed by a number: ``size=">=1000"``
+            - A list of expressions (OR logic): ``size=[100, "500..1000", ">=1500"]``
 
         Returns
         -------
         response : `~astropy.table.Table`
+            Filtered table of data products.
         """
 
         filter_mask = np.full(len(products), True, dtype=bool)
 
-        # Applying the special filters (mrp_only and extension)
+        # Filter by minimum recommended products (MRP) if specified
         if mrp_only:
             filter_mask &= (products['productGroupDescription'] == "Minimum Recommended Products")
 
+        # Filter by file extension, if provided
         if extension:
-            if isinstance(extension, str):
-                extension = [extension]
+            ext_mask = utils.apply_extension_filter(products, extension, 'productFilename')
+            filter_mask &= ext_mask
 
-            mask = np.full(len(products), False, dtype=bool)
-            for elt in extension:
-                mask |= [False if isinstance(x, np.ma.core.MaskedConstant) else x.endswith(elt)
-                         for x in products["productFilename"]]
-            filter_mask &= mask
+        # Apply column-based filters
+        col_mask = utils.apply_column_filters(products, filters)
+        filter_mask &= col_mask
 
-        # Applying the rest of the filters
-        for colname, vals in filters.items():
-
-            if isinstance(vals, str):
-                vals = [vals]
-
-            mask = np.full(len(products), False, dtype=bool)
-            for elt in vals:
-                mask |= (products[colname] == elt)
-
-            filter_mask &= mask
-
-        return products[np.where(filter_mask)]
+        return products[filter_mask]
 
     def download_file(self, uri, *, local_path=None, base_url=None, cache=True, cloud_only=False, verbose=True):
         """
@@ -665,11 +670,11 @@ class ObservationsClass(MastQueryWithLogin):
                     else:
                         log.warning("Falling back to mast download...")
                         self._download_file(escaped_url, local_path,
-                                            cache=cache, head_safe=True, continuation=False,
+                                            cache=cache, head_safe=True,
                                             verbose=verbose)
             else:
                 self._download_file(escaped_url, local_path,
-                                    cache=cache, head_safe=True, continuation=False,
+                                    cache=cache, head_safe=True,
                                     verbose=verbose)
 
             # check if file exists also this is where would perform md5,

@@ -204,7 +204,7 @@ class CatalogsClass(MastQueryWithLogin):
         """
 
         # Put coordinates and radius into consistent format
-        coordinates = commons.parse_coordinates(coordinates)
+        coordinates = commons.parse_coordinates(coordinates, return_frame='icrs')
 
         # if radius is just a number we assume degrees
         radius = coord.Angle(radius, u.deg)
@@ -601,7 +601,7 @@ class CatalogsClass(MastQueryWithLogin):
             bundler_response = response[0].json()
 
             local_path = os.path.join(download_dir, "{}.sh".format(download_file))
-            self._download_file(bundler_response['url'], local_path, head_safe=True, continuation=False)
+            self._download_file(bundler_response['url'], local_path, head_safe=True)
 
             status = "COMPLETE"
             msg = None

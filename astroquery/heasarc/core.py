@@ -517,18 +517,24 @@ class HeasarcClass(BaseVOQuery, BaseQuery):
 
         # datalink url
         dlink_url = f'{self.VO_URL}/datalink/{catalog_name}'
-
         query = pyvo.dal.adhoc.DatalinkQuery(
             baseurl=dlink_url,
             id=query_result['__row'],
             session=self._session
         )
-        dl_result = query.execute().to_table()
+
+        dl_result = pyvo.dal.DALResults(
+            query.execute_votable(post=True),
+            url=query.queryurl,
+            session=query._session
+        ).to_table()
+
         # include rows that have directory links (i.e. data) and those
         # that report errors (usually means there are no data products)
         dl_result = dl_result[np.ma.mask_or(
             dl_result['content_type'] == 'directory',
-            dl_result['error_message'] != ''
+            dl_result['error_message'] != '',
+            shrink=False
         )]
         dl_result = dl_result[['ID', 'access_url', 'content_length', 'error_message']]
 

@@ -174,44 +174,44 @@ class GaiaClass(TapPlus):
         Parameters
         ----------
         ids :  str, int, str list or int list, mandatory
-            list of identifiers
+            List of identifiers
         data_release: str, optional, default None
-            data release from which data should be taken. E.g. 'Gaia DR3'
-            By default, it takes the current default one.
+            Data release from which data should be taken. E.g. 'Gaia DR3'. By default, it takes the current default one.
         data_structure: str, optional, default 'INDIVIDUAL'
-            it can be 'INDIVIDUAL' or 'RAW':
+            It can be 'INDIVIDUAL' or 'RAW':
             'INDIVIDUAL' means products are provided in separate files for each sourceId. All files are zipped
-            in a single bundle, even if only one source/file is considered
-            'RAW' means products are provided following a Data Model similar to that used in the MDB, meaning in
-            particular that parameters stored as arrays will remain as such. A single file is provided for the data of
-            all sourceIds together, but in this case there will be always be one row per sourceId
-        retrieval_type : str, optional, default 'ALL' to retrieve all data  from the list of sources
-            retrieval type identifier. For GAIA DR2 possible values are ['EPOCH_PHOTOMETRY']
-            For GAIA DR3, possible values are ['EPOCH_PHOTOMETRY', 'RVS', 'XP_CONTINUOUS', 'XP_SAMPLED',
-            'MCMC_GSPPHOT' or 'MCMC_MSC']
-            For GAIA DR4, possible values will be ['EPOCH_PHOTOMETRY', 'MEAN_SPECTRUM_RVS', 'XP_CONTINUOUS',
-            'XP_SAMPLED', 'MCMC_GSPPHOT', 'MCMC_MSC', 'EPOCH_ASTROMETRY', 'RVS_EPOCH_DATA_SINGLE',
-            'RVS_EPOCH_DATA_DOUBLE','RVS_EPOCH_SPECTRUM', 'RVS_TRANSIT', 'EPOCH_ASTROMETRY_CROWDED_FIELD',
-            'EPOCH_IMAGE', 'EPOCH_PHOTOMETRY_CCD', 'XP_EPOCH_SPECTRUM_SSO', 'XP_EPOCH_CROWDING', 'XP_MEAN_SPECTRUM',
-            'XP_EPOCH_SPECTRUM', 'CROWDED_FIELD_IMAGE', 'EPOCH_ASTROMETRY_BRIGHT']. Note that for
-            'CROWDED_FIELD_IMAGE' only the format 'fits' can be used, and that its image, in the principal header, will
-            not be available in the returned dictionary. Set 'output_file' to retrieve all data: image + tables.
+            in a single bundle, even if only one source/file is considered 'RAW' means products are provided
+            following a Data Model similar to that used in the MDB, meaning in particular that parameters stored as
+            arrays will remain as such. A single file is provided for the data of all sourceIds together, but in this
+            case there will be always be one row per sourceId.
+        retrieval_type : str, optional, default ‘ALL’ to retrieve all data from the list of sources
+            Retrieval type identifier:
+            For Gaia DR2, the only possible values is ['EPOCH_PHOTOMETRY']
+            For Gaia DR3, the possible values are ['EPOCH_PHOTOMETRY', 'RVS', 'XP_CONTINUOUS', 'XP_SAMPLED',
+            'MCMC_GSPPHOT', 'MCMC_MSC']
+            For Gaia DR4, the possible values will be ['EPOCH_PHOTOMETRY', 'MEAN_SPECTRUM_RVS', 'MCMC_GSP_PHOT',
+            'EPOCH_ASTROMETRY', 'EPOCH_SPECTRUM_RVS', 'EPOCH_ASTROMETRY_CROWDED_FIELD',
+            'EPOCH_PHOTOMETRY_CROWDED_FIELD', 'EPOCH_IMAGE', 'EPOCH_PHOTOMETRY_CCD', 'EPOCH_SPECTRUM_XP_SSO',
+            'EPOCH_SPECTRUM_XP_CROWDING', 'MEAN_SPECTRUM_XP', 'EPOCH_SPECTRUM_XP', 'CROWDED_FIELD_IMAGE',
+            'EPOCH_ASTROMETRY_BRIGHT', 'MEAN_SPECTRUM_XP_GRAVLENS', 'EPOCH_FLAGS_NSS', 'EPOCH_PARAMETERS_RVS_SINGLE',
+            'EPOCH_PARAMETERS_RVS_DOUBLE', 'EPOCH_FLAGS_VARI']. Note that for 'CROWDED_FIELD_IMAGE', only the format
+            'fits' can be used, and its image, in the principal header, will not be available in the returned
+            dictionary. Set 'output_file' to retrieve all data: image + tables.
         linking_parameter : str, optional, default SOURCE_ID, valid values: SOURCE_ID, TRANSIT_ID, IMAGE_ID
             By default, all the identifiers are considered as source_id
             SOURCE_ID: the identifiers are considered as source_id
             TRANSIT_ID: the identifiers are considered as transit_id
             IMAGE_ID: the identifiers are considered as sif_observation_id
         valid_data : bool, optional, default False
-            By default, the epoch photometry service returns all available data, including
-            data rows where flux is null and/or the rejected_by_photometry flag is set to True.
-            In order to retrieve only valid data (data rows where flux is not null and/or the
-            rejected_by_photometry flag is set to False) this request parameter should be included
-            with valid_data=True.
+            By default, the epoch photometry service returns all available data, including data rows where flux is
+            null and/or the rejected_by_photometry flag is set to True. In order to retrieve only valid data (data
+            rows where flux is not null and/or the rejected_by_photometry flag is set to False) this request
+            parameter should be included with valid_data=True.
         avoid_datatype_check: boolean, optional, default False.
-            By default, this value will be set to False. If it is set to 'true'
-            the Datalink items tags will not be checked.
+            By default, this value will be set to False. If it is set to 'true' the Datalink items tags will not be
+            checked.
         format : str, optional, default 'votable'
-            loading format. Other available formats are 'csv', 'ecsv','votable_plain', 'json' and 'fits'
+            Loading format. Other available formats are 'csv', 'ecsv','votable_plain', 'json' and 'fits'
         dump_to_file: boolean, optional, default False.
             If it is true, a compressed directory named "datalink_output_<time_stamp>.zip" with all the DataLink
             files is made in the current working directory. The <time_stamp> format follows the ISO 8601 standard:
@@ -219,7 +219,7 @@ class GaiaClass(TapPlus):
         overwrite_output_file : boolean, optional, default False
             To overwrite the output file ("datalink_output.zip") if it already exists.
         verbose : bool, optional, default 'False'
-            flag to display information about the process
+            Flag to display information about the process
 
         Returns
         -------
@@ -870,13 +870,13 @@ class GaiaClass(TapPlus):
         Parameters
         ----------
         table_a_full_qualified_name : str, mandatory
-            a full qualified table name (i.e. schema name and table name)
+            a full qualified table name (i.e. schema name and table name, "user_<user_name>.<table_name>" )
         table_a_column_ra : str, mandatory
             the ‘ra’ column in the table table_a_full_qualified_name
         table_a_column_dec :  str, mandatory
             the ‘dec’ column in the table table_a_full_qualified_name
         table_b_full_qualified_name : str, optional, default MAIN_GAIA_TABLE
-            a full qualified table name (i.e. schema name and table name)
+            a full qualified table name (i.e. schema name and table name, "user_<user_name>.<table_name>" )
         table_b_column_ra : str, optional, default MAIN_GAIA_TABLE_RA
             the ‘ra’ column in the table table_b_full_qualified_name
         table_b_column_dec :  str, default MAIN_GAIA_TABLE_DEC

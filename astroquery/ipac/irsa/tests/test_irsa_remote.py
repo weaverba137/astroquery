@@ -6,8 +6,6 @@ from astropy.table import Table
 from astropy.coordinates import SkyCoord
 from astropy.utils.exceptions import AstropyDeprecationWarning
 
-from pyvo.dal.exceptions import DALOverflowWarning
-
 from astroquery.ipac.irsa import Irsa
 
 
@@ -84,6 +82,13 @@ class TestIrsa:
 
         assert len(allwise_catalogs) == 4
 
+    def test_list_catalogs_filter_description(self):
+        twomass_catalogs = Irsa.list_catalogs(filter='2mass')
+        assert len(twomass_catalogs) == 39
+
+        all_twomass = Irsa.list_catalogs(filter='2mass', include_metadata_tables=True)
+        assert len(all_twomass) == 58
+
     def test_list_catalogs_metadata(self):
         catalogs = Irsa.list_catalogs(filter='wise')
         all_tables = Irsa.list_catalogs(filter='wise', include_metadata_tables=True)
@@ -114,9 +119,8 @@ class TestIrsa:
 
     def test_tap(self):
         query = "SELECT TOP 5 ra,dec FROM cosmos2015"
-        with pytest.warns(expected_warning=DALOverflowWarning,
-                          match="Partial result set. Potential causes MAXREC, async storage space, etc."):
-            result = Irsa.query_tap(query=query)
+
+        result = Irsa.query_tap(query=query)
         assert len(result) == 5
         assert result.to_table().colnames == ['ra', 'dec']
 
